@@ -229,6 +229,12 @@ ALTER TABLE archive_requests ENABLE ROW LEVEL SECURITY;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 
+-- Grant specific permissions to anonymous users for signup process
+-- Only grant what's needed for school and profile creation during signup
+GRANT INSERT ON schools TO anon;
+GRANT INSERT ON profiles TO anon;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO anon;
+
 -- ============================================================================
 -- POLICY VALIDATION
 -- ============================================================================
