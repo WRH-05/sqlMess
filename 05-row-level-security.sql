@@ -38,23 +38,46 @@ DROP POLICY IF EXISTS "Allow authenticated users full access to archive_requests
 -- ============================================================================
 
 -- SCHOOLS TABLE POLICIES
--- Policy 1: Allow unauthenticated school creation (for signup process)
+-- Policy 1: Allow ANYONE to create schools (critical for signup process)
+-- This must work for unauthenticated users during signup
 CREATE POLICY "school_insert_for_signup" ON schools
-    FOR INSERT WITH CHECK (true);
+    FOR INSERT 
+    WITH CHECK (true);
 
 -- Policy 2: Allow authenticated users to view their own school
+-- Safe approach that doesn't fail if user has no profile yet
 CREATE POLICY "school_select_own" ON schools
     FOR SELECT TO authenticated
-    USING (id = get_user_school_id());
+    USING (
+        EXISTS (
+            SELECT 1 FROM profiles 
+            WHERE profiles.id = auth.uid() 
+            AND profiles.school_id = schools.id
+        )
+    );
 
--- Policy 3: Allow owners to update their school
+-- Policy 3: Allow school owners to update their school
 CREATE POLICY "school_update_by_owner" ON schools
     FOR UPDATE TO authenticated
-    USING (id = get_user_school_id() AND user_has_role('owner'))
-    WITH CHECK (id = get_user_school_id() AND user_has_role('owner'));
+    USING (
+        EXISTS (
+            SELECT 1 FROM profiles 
+            WHERE profiles.id = auth.uid() 
+            AND profiles.school_id = schools.id 
+            AND profiles.role = 'owner'
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM profiles 
+            WHERE profiles.id = auth.uid() 
+            AND profiles.school_id = schools.id 
+            AND profiles.role = 'owner'
+        )
+    );
 
 -- PROFILES TABLE POLICIES
--- Policy 1: Allow system to create profiles (for trigger)
+-- Policy 1: Allow system/trigger to create profiles (for signup triggers)
 CREATE POLICY "profile_insert_system" ON profiles
     FOR INSERT WITH CHECK (true);
 
@@ -64,9 +87,17 @@ CREATE POLICY "profile_select_own" ON profiles
     USING (id = auth.uid());
 
 -- Policy 3: Allow users to view other profiles in their school
+-- Safe approach using EXISTS to avoid recursion
 CREATE POLICY "profile_select_school" ON profiles
     FOR SELECT TO authenticated
-    USING (school_id = get_user_school_id() AND id != auth.uid());
+    USING (
+        id != auth.uid() AND
+        EXISTS (
+            SELECT 1 FROM profiles owner_profile
+            WHERE owner_profile.id = auth.uid()
+            AND owner_profile.school_id = profiles.school_id
+        )
+    );
 
 -- Policy 4: Allow users to update their own profile
 CREATE POLICY "profile_update_own" ON profiles
