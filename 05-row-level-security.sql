@@ -42,6 +42,7 @@ DROP POLICY IF EXISTS "Allow authenticated users full access to archive_requests
 -- This must work for unauthenticated users during signup
 CREATE POLICY "school_insert_for_signup" ON schools
     FOR INSERT 
+    TO anon, authenticated
     WITH CHECK (true);
 
 -- Policy 2: Allow authenticated users to view their own school
@@ -76,14 +77,12 @@ CREATE POLICY "school_update_by_owner" ON schools
         )
     );
 
--- ANON permissions for school creation during signup
-GRANT SELECT (id, name) ON schools TO anon;
-GRANT INSERT ON schools TO anon;
-
 -- PROFILES TABLE POLICIES
 -- Policy 1: Allow system/trigger to create profiles (for signup triggers)
 CREATE POLICY "profile_insert_system" ON profiles
-    FOR INSERT WITH CHECK (true);
+    FOR INSERT 
+    TO anon, authenticated
+    WITH CHECK (true);
 
 -- Policy 2: Allow users to view their own profile (critical for auth)
 CREATE POLICY "profile_select_own" ON profiles
@@ -106,9 +105,6 @@ CREATE POLICY "profile_update_own" ON profiles
     FOR UPDATE TO authenticated
     USING (id = (SELECT auth.uid()))
     WITH CHECK (id = (SELECT auth.uid()));
-
--- ANON permissions for profile creation during signup
-GRANT INSERT ON profiles TO anon;
 
 -- INVITATIONS TABLE POLICIES
 -- Policy 1: Allow owners/managers to create invitations in their school
@@ -239,6 +235,59 @@ GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 GRANT INSERT ON schools TO anon;
 GRANT INSERT ON profiles TO anon;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO anon;
+
+-- Grant access to extensions schema and UUID function for anonymous users
+GRANT USAGE ON SCHEMA extensions TO anon;
+GRANT EXECUTE ON FUNCTION extensions.uuid_generate_v4() TO anon;
+
+-- Grant access to any other UUID functions that might exist as fallback
+DO $$
+BEGIN
+    -- Try to grant access to public schema UUID function as fallback
+    IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'uuid_generate_v4' AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')) THEN
+        GRANT EXECUTE ON FUNCTION public.uuid_generate_v4() TO anon;
+    END IF;
+EXCEPTION WHEN OTHERS THEN
+    -- Ignore errors if function doesn't exist
+    NULL;
+END $$;
+
+-- ============================================================================
+-- RLS POLICY VERIFICATION
+-- ============================================================================
+
+-- Verify critical policies exist for signup flow
+DO $$
+DECLARE
+    policy_count INTEGER;
+BEGIN
+    RAISE NOTICE 'Verifying Critical RLS Policies:';
+    RAISE NOTICE '============================================================================';
+    
+    -- Check schools policies
+    SELECT COUNT(*) INTO policy_count
+    FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'schools' AND policyname = 'school_insert_for_signup';
+    
+    IF policy_count > 0 THEN
+        RAISE NOTICE '  ✓ Schools INSERT policy exists (signup enabled)';
+    ELSE
+        RAISE WARNING '  ✗ Schools INSERT policy missing (signup will fail)';
+    END IF;
+    
+    -- Check profiles policies
+    SELECT COUNT(*) INTO policy_count
+    FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'profiles' AND policyname = 'profile_insert_system';
+    
+    IF policy_count > 0 THEN
+        RAISE NOTICE '  ✓ Profiles INSERT policy exists (user creation enabled)';
+    ELSE
+        RAISE WARNING '  ✗ Profiles INSERT policy missing (user creation will fail)';
+    END IF;
+    
+    RAISE NOTICE '============================================================================';
+END $$;
 
 -- ============================================================================
 -- POLICY VALIDATION
