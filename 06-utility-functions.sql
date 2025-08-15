@@ -185,7 +185,8 @@ BEGIN
     
     RETURN teacher_earnings;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER`nSET search_path = '';
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = '';
 
 -- Function to calculate school revenue for a time period
 CREATE OR REPLACE FUNCTION calculate_school_revenue(
@@ -207,7 +208,8 @@ BEGIN
     
     RETURN total_revenue;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER`nSET search_path = '';
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = '';
 
 -- ============================================================================
 -- ATTENDANCE TRACKING FUNCTIONS
@@ -244,7 +246,8 @@ BEGIN
     
     RETURN true;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER`nSET search_path = '';
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = '';
 
 -- Function to get attendance statistics for a course
 CREATE OR REPLACE FUNCTION get_attendance_stats(p_course_id INTEGER)
@@ -275,7 +278,8 @@ BEGIN
     GROUP BY s.id, s.name
     ORDER BY s.name;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER`nSET search_path = '';
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = '';
 
 -- ============================================================================
 -- ARCHIVE MANAGEMENT FUNCTIONS
@@ -331,7 +335,8 @@ BEGIN
     
     RETURN request_id;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER`nSET search_path = '';
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = '';
 
 -- Function to approve/decline archive request
 CREATE OR REPLACE FUNCTION process_archive_request(
@@ -341,7 +346,7 @@ CREATE OR REPLACE FUNCTION process_archive_request(
 RETURNS BOOLEAN AS $$
 DECLARE
     request_record RECORD;
-    new_status request_status;
+    new_status public.request_status;
 BEGIN
     -- Only owners and managers can process archive requests
     IF NOT user_has_any_role(ARRAY['owner', 'manager']) THEN
@@ -360,7 +365,7 @@ BEGIN
     END IF;
     
     -- Set new status
-    new_status := CASE WHEN p_approve THEN 'approved'::request_status ELSE 'declined'::request_status END;
+    new_status := CASE WHEN p_approve THEN 'approved'::public.request_status ELSE 'declined'::public.request_status END;
     
     -- Update request
     UPDATE archive_requests
@@ -394,7 +399,8 @@ BEGIN
     
     RETURN true;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER`nSET search_path = '';
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = '';
 
 -- ============================================================================
 -- MAINTENANCE FUNCTIONS
@@ -426,7 +432,8 @@ BEGIN
     
     RETURN cleanup_results;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER`nSET search_path = '';
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = '';
 
 -- ============================================================================
 -- GRANT PERMISSIONS
