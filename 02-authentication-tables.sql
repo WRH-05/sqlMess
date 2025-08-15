@@ -101,15 +101,21 @@ BEGIN
 -- PERMISSION GRANTS FOR AUTHENTICATION FLOW
 -- ============================================================================
 
--- Allow anonymous users to create schools during signup
+-- Allow anonymous users to create schools and profiles during signup
 GRANT INSERT ON schools TO anon;
 GRANT INSERT ON profiles TO anon;
 GRANT SELECT ON schools TO anon;
+GRANT SELECT ON profiles TO anon;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO anon;
 
 -- Allow authenticated users to manage their data
 GRANT ALL ON schools TO authenticated;
 GRANT ALL ON profiles TO authenticated;
 GRANT ALL ON invitations TO authenticated;
+
+-- Grant usage on schemas that anonymous users need
+GRANT USAGE ON SCHEMA public TO anon;
+GRANT USAGE ON SCHEMA extensions TO anon;
 
     RAISE NOTICE '============================================================================';
     RAISE NOTICE 'Tables Created:';

@@ -45,6 +45,13 @@ CREATE POLICY "school_insert_for_signup" ON schools
     TO anon, authenticated
     WITH CHECK (true);
 
+-- Policy 1b: Allow anonymous users to also SELECT their newly created school
+-- This is needed during the signup flow to verify school creation
+CREATE POLICY "school_select_for_signup" ON schools
+    FOR SELECT 
+    TO anon
+    USING (true);
+
 -- Policy 2: Allow authenticated users to view their own school
 -- Safe approach that doesn't fail if user has no profile yet
 CREATE POLICY "school_select_own" ON schools
@@ -79,10 +86,18 @@ CREATE POLICY "school_update_by_owner" ON schools
 
 -- PROFILES TABLE POLICIES
 -- Policy 1: Allow system/trigger to create profiles (for signup triggers)
+-- This needs to work for both anonymous and authenticated users during signup
 CREATE POLICY "profile_insert_system" ON profiles
     FOR INSERT 
     TO anon, authenticated
     WITH CHECK (true);
+
+-- Policy 1b: Allow anonymous users to SELECT their own profile during signup
+-- This is needed during the signup flow verification
+CREATE POLICY "profile_select_for_signup" ON profiles
+    FOR SELECT 
+    TO anon
+    USING (true);
 
 -- Policy 2: Allow users to view their own profile (critical for auth)
 CREATE POLICY "profile_select_own" ON profiles
@@ -234,6 +249,8 @@ GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 -- Only grant what's needed for school and profile creation during signup
 GRANT INSERT ON schools TO anon;
 GRANT INSERT ON profiles TO anon;
+GRANT SELECT ON schools TO anon;
+GRANT SELECT ON profiles TO anon;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO anon;
 
 -- Grant access to extensions schema and UUID function for anonymous users
@@ -251,6 +268,11 @@ EXCEPTION WHEN OTHERS THEN
     -- Ignore errors if function doesn't exist
     NULL;
 END $$;
+
+-- Grant necessary access to auth schema for anonymous users during signup
+-- This is critical for the signup trigger to work
+GRANT USAGE ON SCHEMA auth TO anon;
+GRANT SELECT ON auth.users TO anon;
 
 -- ============================================================================
 -- RLS POLICY VERIFICATION

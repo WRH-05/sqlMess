@@ -303,6 +303,11 @@ GRANT EXECUTE ON FUNCTION cleanup_expired_invitations() TO authenticated;
 -- Grant permission to access auth.users for the trigger
 GRANT SELECT ON auth.users TO postgres, service_role;
 
+-- Additional grants for anonymous users during signup process
+GRANT USAGE ON SCHEMA public TO anon;
+GRANT USAGE ON SCHEMA auth TO anon;
+GRANT SELECT ON auth.users TO anon;
+
 -- ============================================================================
 -- SUCCESS MESSAGE
 -- ============================================================================
