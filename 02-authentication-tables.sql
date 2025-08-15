@@ -8,7 +8,7 @@
 
 -- Schools table - Multi-tenant organizations (each school is a separate tenant)
 CREATE TABLE IF NOT EXISTS schools (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     name TEXT NOT NULL,
     address TEXT,
     phone TEXT,
@@ -44,12 +44,12 @@ CREATE TABLE IF NOT EXISTS profiles (
 
 -- Invitations table - Secure invite-only registration system
 CREATE TABLE IF NOT EXISTS invitations (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     email TEXT NOT NULL,
     role user_role NOT NULL DEFAULT 'receptionist',
     school_id UUID REFERENCES schools(id) ON DELETE CASCADE NOT NULL,
     invited_by UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
-    token UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
+    token UUID DEFAULT extensions.uuid_generate_v4() UNIQUE NOT NULL,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (NOW() + INTERVAL '7 days'),
     accepted_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::TEXT, NOW()) NOT NULL,
@@ -97,6 +97,20 @@ DO $$
 BEGIN
     RAISE NOTICE '============================================================================';
     RAISE NOTICE 'AUTHENTICATION TABLES CREATED SUCCESSFULLY!';
+-- ============================================================================
+-- PERMISSION GRANTS FOR AUTHENTICATION FLOW
+-- ============================================================================
+
+-- Allow anonymous users to create schools during signup
+GRANT INSERT ON schools TO anon;
+GRANT INSERT ON profiles TO anon;
+GRANT SELECT ON schools TO anon;
+
+-- Allow authenticated users to manage their data
+GRANT ALL ON schools TO authenticated;
+GRANT ALL ON profiles TO authenticated;
+GRANT ALL ON invitations TO authenticated;
+
     RAISE NOTICE '============================================================================';
     RAISE NOTICE 'Tables Created:';
     RAISE NOTICE '  ✓ schools - Multi-tenant organization management';

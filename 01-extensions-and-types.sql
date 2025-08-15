@@ -6,12 +6,15 @@
 -- DATABASE EXTENSIONS
 -- ============================================================================
 
+-- Create extensions in the proper schema for security
+CREATE SCHEMA IF NOT EXISTS extensions;
+
 -- Enable UUID generation
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
 
 -- Enable additional extensions that might be useful
-CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
-CREATE EXTENSION IF NOT EXISTS "pg_trgm"; -- For text search performance
+CREATE EXTENSION IF NOT EXISTS "pg_stat_statements" WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS "pg_trgm" WITH SCHEMA extensions; -- For text search performance
 
 -- ============================================================================
 -- CUSTOM ENUM TYPES

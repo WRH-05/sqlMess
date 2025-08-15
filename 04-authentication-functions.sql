@@ -13,7 +13,10 @@ DROP FUNCTION IF EXISTS handle_new_user() CASCADE;
 -- Create the user registration trigger function
 -- This function handles both owner signup (school creation) and invitation-based signup
 CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+LANGUAGE plpgsql 
+SECURITY DEFINER
+SET search_path = '' AS $$
 DECLARE
     invitation_record RECORD;
     user_school_id UUID;
@@ -112,7 +115,7 @@ EXCEPTION
         -- Don't fail the user creation, just log the error
         RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Create the trigger on auth.users
 CREATE TRIGGER on_auth_user_created
@@ -131,7 +134,10 @@ RETURNS TABLE (
     role TEXT,
     full_name TEXT,
     is_active BOOLEAN
-) AS $$
+) 
+LANGUAGE plpgsql 
+SECURITY DEFINER
+SET search_path = '' AS $$
 BEGIN
     RETURN QUERY
     SELECT 
@@ -144,11 +150,14 @@ BEGIN
     WHERE p.id = auth.uid()
     AND p.is_active = true;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Function to check if current user has a specific role
 CREATE OR REPLACE FUNCTION user_has_role(required_role TEXT)
-RETURNS BOOLEAN AS $$
+RETURNS BOOLEAN 
+LANGUAGE plpgsql 
+SECURITY DEFINER
+SET search_path = '' AS $$
 BEGIN
     RETURN EXISTS (
         SELECT 1 FROM profiles
@@ -157,11 +166,14 @@ BEGIN
         AND is_active = true
     );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Function to check if current user has any of the specified roles
 CREATE OR REPLACE FUNCTION user_has_any_role(required_roles TEXT[])
-RETURNS BOOLEAN AS $$
+RETURNS BOOLEAN 
+LANGUAGE plpgsql 
+SECURITY DEFINER
+SET search_path = '' AS $$
 BEGIN
     RETURN EXISTS (
         SELECT 1 FROM profiles
@@ -170,7 +182,7 @@ BEGIN
         AND is_active = true
     );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Function to get user's school_id (for use in RLS policies)
 CREATE OR REPLACE FUNCTION get_user_school_id()

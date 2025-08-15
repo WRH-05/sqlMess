@@ -13,7 +13,8 @@ BEGIN
     NEW.updated_at = TIMEZONE('utc'::TEXT, NOW());
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+SET search_path = '';
 
 -- Create triggers for all tables with updated_at columns
 DO $$
@@ -100,7 +101,8 @@ BEGIN
     
     RETURN true;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = '';
 
 -- Function to remove a student from a course
 CREATE OR REPLACE FUNCTION remove_student_from_course(
@@ -146,7 +148,8 @@ BEGIN
     
     RETURN true;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = '';
 
 -- ============================================================================
 -- FINANCIAL CALCULATION FUNCTIONS
@@ -182,7 +185,7 @@ BEGIN
     
     RETURN teacher_earnings;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$ LANGUAGE plpgsql SECURITY DEFINER`nSET search_path = '';
 
 -- Function to calculate school revenue for a time period
 CREATE OR REPLACE FUNCTION calculate_school_revenue(
@@ -204,7 +207,7 @@ BEGIN
     
     RETURN total_revenue;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$ LANGUAGE plpgsql SECURITY DEFINER`nSET search_path = '';
 
 -- ============================================================================
 -- ATTENDANCE TRACKING FUNCTIONS
@@ -241,7 +244,7 @@ BEGIN
     
     RETURN true;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$ LANGUAGE plpgsql SECURITY DEFINER`nSET search_path = '';
 
 -- Function to get attendance statistics for a course
 CREATE OR REPLACE FUNCTION get_attendance_stats(p_course_id INTEGER)
@@ -272,7 +275,7 @@ BEGIN
     GROUP BY s.id, s.name
     ORDER BY s.name;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$ LANGUAGE plpgsql SECURITY DEFINER`nSET search_path = '';
 
 -- ============================================================================
 -- ARCHIVE MANAGEMENT FUNCTIONS
@@ -328,7 +331,7 @@ BEGIN
     
     RETURN request_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$ LANGUAGE plpgsql SECURITY DEFINER`nSET search_path = '';
 
 -- Function to approve/decline archive request
 CREATE OR REPLACE FUNCTION process_archive_request(
@@ -391,7 +394,7 @@ BEGIN
     
     RETURN true;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$ LANGUAGE plpgsql SECURITY DEFINER`nSET search_path = '';
 
 -- ============================================================================
 -- MAINTENANCE FUNCTIONS
@@ -423,7 +426,7 @@ BEGIN
     
     RETURN cleanup_results;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$ LANGUAGE plpgsql SECURITY DEFINER`nSET search_path = '';
 
 -- ============================================================================
 -- GRANT PERMISSIONS

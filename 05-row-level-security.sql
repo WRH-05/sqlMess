@@ -51,7 +51,7 @@ CREATE POLICY "school_select_own" ON schools
     USING (
         EXISTS (
             SELECT 1 FROM profiles 
-            WHERE profiles.id = auth.uid() 
+            WHERE profiles.id = (SELECT auth.uid()) 
             AND profiles.school_id = schools.id
         )
     );
@@ -62,7 +62,7 @@ CREATE POLICY "school_update_by_owner" ON schools
     USING (
         EXISTS (
             SELECT 1 FROM profiles 
-            WHERE profiles.id = auth.uid() 
+            WHERE profiles.id = (SELECT auth.uid()) 
             AND profiles.school_id = schools.id 
             AND profiles.role = 'owner'
         )
@@ -70,11 +70,15 @@ CREATE POLICY "school_update_by_owner" ON schools
     WITH CHECK (
         EXISTS (
             SELECT 1 FROM profiles 
-            WHERE profiles.id = auth.uid() 
+            WHERE profiles.id = (SELECT auth.uid()) 
             AND profiles.school_id = schools.id 
             AND profiles.role = 'owner'
         )
     );
+
+-- ANON permissions for school creation during signup
+GRANT SELECT (id, name) ON schools TO anon;
+GRANT INSERT ON schools TO anon;
 
 -- PROFILES TABLE POLICIES
 -- Policy 1: Allow system/trigger to create profiles (for signup triggers)
@@ -84,26 +88,27 @@ CREATE POLICY "profile_insert_system" ON profiles
 -- Policy 2: Allow users to view their own profile (critical for auth)
 CREATE POLICY "profile_select_own" ON profiles
     FOR SELECT TO authenticated
-    USING (id = auth.uid());
+    USING (id = (select auth.uid()));
 
 -- Policy 3: Allow users to view other profiles in their school
 -- Safe approach using EXISTS to avoid recursion
 CREATE POLICY "profile_select_school" ON profiles
     FOR SELECT TO authenticated
     USING (
-        id != auth.uid() AND
+        id != (SELECT auth.uid()) AND
         EXISTS (
-            SELECT 1 FROM profiles owner_profile
-            WHERE owner_profile.id = auth.uid()
+            SELECT 1 FROM profiles owner_profile 
+            WHERE owner_profile.id = (SELECT auth.uid())
             AND owner_profile.school_id = profiles.school_id
         )
-    );
-
--- Policy 4: Allow users to update their own profile
+    );-- Policy 4: Allow users to update their own profile
 CREATE POLICY "profile_update_own" ON profiles
     FOR UPDATE TO authenticated
-    USING (id = auth.uid())
-    WITH CHECK (id = auth.uid());
+    USING (id = (SELECT auth.uid()))
+    WITH CHECK (id = (SELECT auth.uid()));
+
+-- ANON permissions for profile creation during signup
+GRANT INSERT ON profiles TO anon;
 
 -- INVITATIONS TABLE POLICIES
 -- Policy 1: Allow owners/managers to create invitations in their school
